@@ -18,14 +18,21 @@
      ((5 12)
       (4 13)))))
 
-(defn- bracket [region layout]
-  (let [lhs (first layout)]
-    (map
-     (if (seq? lhs)
-       (partial bracket region)
-       (fn [seed] (str seed " in the " region))
-       )
-     layout)))
+(defn- region-bracket [region layout]
+  (map
+   (if (seq? (first layout))
+     (partial region-bracket region)
+     (fn [seed] (str seed " in the " region))
+     )
+   layout))
+
+(defn- bracket [layout]
+  (map (if (seq? (first layout))
+           bracket
+           (fn [region] (region-bracket region region-layout)))
+       layout))
+
+(def full-bracket (bracket final-four))
 
 (defn- teams-and-seeds []
   (with-open [in-file (io/reader "data/bracket-00.tsv")]
