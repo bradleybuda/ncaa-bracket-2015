@@ -28,10 +28,16 @@
 (defn- region-bracket [region layout]
   (fill-using-layout
    (fn [seed]
-     (first (filter (fn [team]
-                      (and (= seed (:seed team))
-                           (= region (:region team))))
-                    (teams-and-seeds))))
+     (let [seeds
+           (filter (fn [team]
+                     (and (= seed (:seed team))
+                          (= region (:region team))))
+                   (teams-and-seeds))]
+
+       ;; Handle "first-four" games where there are multiple teams w/ same seed
+       (if (= 1 (count seeds))
+         (first seeds)
+         seeds)))
    layout))
 
 (defn- bracket [layout]
