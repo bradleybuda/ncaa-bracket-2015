@@ -4,12 +4,36 @@
 (ns ncaa-bracket-2015.core
   (:gen-class))
 
+(def final-four
+  '(("Midwest" "West")
+    ("East" "South")))
+
+(def region-layout
+  '((((6 11)
+      (3 14))
+     ((7 10)
+      (2 15)))
+    (((1 16)
+      (8 9))
+     ((5 12)
+      (4 13)))))
+
+(defn- bracket [region layout]
+  (let [lhs (first layout)]
+    (map
+     (if (seq? lhs)
+       (partial bracket region)
+       (fn [seed] (str seed " in the " region))
+       )
+     layout)))
+
 (defn- teams-and-seeds []
   (with-open [in-file (io/reader "data/bracket-00.tsv")]
     (let [records (seq (doall (csv/read-csv in-file :separator \tab)))]
       (map
        (fn [record]
          (let [[_ name seed region kenpom] record]
+           ; TODO parse seed into numeric and play-in status
            {:name name :seed seed :region region :kenpom (read-string kenpom)}))
        (rest records)))))
 
