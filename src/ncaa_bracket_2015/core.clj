@@ -18,21 +18,28 @@
      ((5 12)
       (4 13)))))
 
-(defn- region-bracket [region layout]
+(defn- fill-using-layout [base-fn layout]
   (map
    (if (seq? (first layout))
-     (partial region-bracket region)
-     (fn [seed] (str seed " in the " region))
-     )
+     (partial fill-using-layout base-fn) ;; recurse
+     base-fn ;; base case
+     ) layout))
+
+(defn- region-bracket [region layout]
+  (fill-using-layout
+   (fn [seed]
+     (first (filter (fn [team]
+                      (and (= seed (:seed team))
+                           (= region (:region team))))
+                    (teams-and-seeds))))
    layout))
 
 (defn- bracket [layout]
-  (map (if (seq? (first layout))
-           bracket
-           (fn [region] (region-bracket region region-layout)))
-       layout))
+  (fill-using-layout
+   (fn [region] (region-bracket region region-layout))
+   layout))
 
-(def full-bracket (bracket final-four))
+(def full-bracket (partial bracket final-four))
 
 (defn- teams-and-seeds []
   (with-open [in-file (io/reader "data/bracket-00.tsv")]
@@ -41,7 +48,8 @@
        (fn [record]
          (let [[_ name seed region kenpom] record]
            ; TODO parse seed into numeric and play-in status
-           {:name name :seed seed :region region :kenpom (read-string kenpom)}))
+           {:name name :seed (read-string (re-find #"\d+" seed)) :region region :kenpom (read-string kenpom)}
+           ))
        (rest records)))))
 
 (defn- pvictory [pythag-winner pythag-loser]
