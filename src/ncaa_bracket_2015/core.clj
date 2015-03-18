@@ -1,8 +1,5 @@
 (ns ncaa-bracket-2015.core
-  (:refer-clojure :exclude [atom doseq let fn defn ref dotimes defprotocol loop for])
-
-  (:require [clojure.core.typed :refer :all]
-            [clojure.data.csv :as csv]
+  (:require [clojure.data.csv :as csv]
             [clojure.java.io :as io]
             [clojure.math.numeric-tower :refer [expt]]
             [clojure.math.combinatorics :refer [cartesian-product permutations]])
@@ -70,7 +67,6 @@
 (def full-bracket
   (bracket final-four-layout))
 
-(ann pvictory [Number Number -> Number])
 (defn- pvictory [pythag-winner pythag-loser]
   (let [a pythag-winner
         b pythag-loser]
