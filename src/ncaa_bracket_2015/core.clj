@@ -2,7 +2,8 @@
   (:require [clojure.data.csv :as csv]
             [clojure.java.io :as io]
             [clojure.math.numeric-tower :refer [expt]]
-            [clojure.math.combinatorics :refer [cartesian-product permutations]])
+            [clojure.math.combinatorics :refer [cartesian-product permutations]]
+            [clojure.pprint :refer [pprint]])
 
   (:gen-class))
 
@@ -133,5 +134,5 @@
     (let [team sub-bracket]
       (make-single-team-reach-distribution team))))
 
-(def -main
-  (partial find-bracket-reach-distributions full-bracket))
+(defn -main []
+  (pprint (find-bracket-reach-distributions full-bracket)))
