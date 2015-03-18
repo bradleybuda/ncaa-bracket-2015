@@ -1,8 +1,11 @@
 (ns ncaa-bracket-2015.core
   (:refer-clojure :exclude [atom doseq let fn defn ref dotimes defprotocol loop for])
-  (:require [clojure.core.typed :refer :all])
-  (:require [clojure.data.csv :as csv])
-  (:require [clojure.java.io :as io])
+
+  (:require [clojure.core.typed :refer :all]
+            [clojure.data.csv :as csv]
+            [clojure.java.io :as io]
+            [clojure.math.combinatorics :refer [cartesian-product permutations]])
+
   (:gen-class))
 
 (def final-four
@@ -70,26 +73,44 @@
     (/ (- a (* a b))
        (+ a b (* -2 a b)))))
 
-;; Finds the victor and their victory probability assuming favorites win all matches
-(defn- pick-result [match]
-  (let [probs (map :kenpom match)
-        p-first-is-victor (apply pvictory probs)
-        victor (if (> p-first-is-victor 0.5) (first match) (last match))
-        p-victor (if (> p-first-is-victor 0.5) p-first-is-victor (- 1 p-first-is-victor))
-        cumulative-victor-probability (:cumulative-probability victor)]
 
-    ;; Prepend this victory probability to the existing sequence
-    (assoc victor :cumulative-probability
-           (cons
-            (* (first cumulative-victor-probability) p-victor)
-            cumulative-victor-probability))))
+(defn- play-reach-distributions
+  "Take a pair of reach-distributions and compute the most likely outcomes of a game between them"
+  [reach-distributions]
+  (let [distributions (map :reach-distribution reach-distributions)
+        ;; Pair off all the teams
+        pairings (apply cartesian-product distributions)
+        ;; Blow up into a list with both sets of outcomes for a pair (team A wins, team B wins)
+        outcomes (mapcat permutations pairings)
+        ;; Find the probability of each outcome based on the probability of the team reaching the round and their relative pyth
+        outcome-probabilities (map
+                               (fn [outcome]
+                                 (let [teams (map :team outcome)
+                                       win-probability (apply pvictory (map :kenpom teams))
+                                       reach-probabilities (map :reach-probability outcome)
+                                       outcome-probability (apply * (cons win-probability reach-probabilities))]
+                                   {:team (first teams) :reach-probability outcome-probability}))
+                               outcomes)
+
+        ;; Group the results by team and sum up
+        outcomes-grouped-by-team (vals (group-by (comp :name :team) outcome-probabilities))
+        reduced-outcomes (map (fn [team-group]
+                                (let [total-probability (apply + (map :reach-probability team-group))]
+                                  (assoc (first team-group) :reach-probability total-probability)))
+                              outcomes-grouped-by-team)]
+
+    ;; Limit to just the most likely outcome probs (for now)
+    {:reach-distribution (take 5 (sort-by :reach-probability > reduced-outcomes))}))
+
+(defn- make-single-team-reach-distribution [team]
+  {:reach-distribution (list {:team team :reach-probability 1.0})})
 
 (defn- find-most-likely-victor [sub-bracket]
   (if (seq? sub-bracket)
     (let [sub-bracket-results (map find-most-likely-victor sub-bracket)]
       (pick-result sub-bracket-results))
     (let [team sub-bracket]
-      (assoc team :cumulative-probability [1.0]))))
+      (make-single-team-result team))))
 
 (defn -main
   "I don't do a whole lot ... yet."
