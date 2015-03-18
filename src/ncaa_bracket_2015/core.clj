@@ -18,6 +18,20 @@
      ((5 12)
       (4 13)))))
 
+(defn- read-teams-and-seeds []
+  (with-open [in-file (io/reader "data/bracket-00.tsv")]
+    (let [records (seq (doall (csv/read-csv in-file :separator \tab)))]
+      (map
+       (fn [record]
+         (let [[_ name seed region kenpom] record]
+           ; TODO parse seed into numeric and play-in status
+           {:name name :seed (read-string (re-find #"\d+" seed)) :region region :kenpom (read-string kenpom)}
+           ))
+       (rest records)))))
+
+(def teams-and-seeds
+  (read-teams-and-seeds))
+
 (defn- fill-using-layout [base-fn layout]
   (map
    (if (seq? (first layout))
@@ -32,7 +46,7 @@
            (filter (fn [team]
                      (and (= seed (:seed team))
                           (= region (:region team))))
-                   (teams-and-seeds))]
+                   teams-and-seeds)]
 
        ;; Handle "first-four" games where there are multiple teams w/ same seed
        (if (= 1 (count seeds))
@@ -45,24 +59,21 @@
    (fn [region] (region-bracket region region-layout))
    layout))
 
-(def full-bracket (partial bracket final-four))
-
-(defn- teams-and-seeds []
-  (with-open [in-file (io/reader "data/bracket-00.tsv")]
-    (let [records (seq (doall (csv/read-csv in-file :separator \tab)))]
-      (map
-       (fn [record]
-         (let [[_ name seed region kenpom] record]
-           ; TODO parse seed into numeric and play-in status
-           {:name name :seed (read-string (re-find #"\d+" seed)) :region region :kenpom (read-string kenpom)}
-           ))
-       (rest records)))))
+(def full-bracket
+  (bracket final-four))
 
 (defn- pvictory [pythag-winner pythag-loser]
   (let [a pythag-winner
         b pythag-loser]
     (/ (- a (* a b))
        (+ a b (* -2 a b)))))
+
+(defn- find-most-likely-victor [sub-bracket]
+  (if (seq? sub-bracket)
+    (let [results (map find-most-likely-victor sub-bracket)
+          probs (map :kenpom results)]
+      (if (> (apply pvictory probs) 0.5) (first results) (last results)))
+    sub-bracket))
 
 (defn -main
   "I don't do a whole lot ... yet."
