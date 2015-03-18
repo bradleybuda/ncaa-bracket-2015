@@ -1,7 +1,8 @@
-(require '[clojure.data.csv :as csv]
-         '[clojure.java.io :as io])
-
 (ns ncaa-bracket-2015.core
+  (:refer-clojure :exclude [atom doseq let fn defn ref dotimes defprotocol loop for])
+  (:require [clojure.core.typed :refer :all])
+  (:require [clojure.data.csv :as csv])
+  (:require [clojure.java.io :as io])
   (:gen-class))
 
 (def final-four
@@ -62,6 +63,7 @@
 (def full-bracket
   (bracket final-four))
 
+(ann pvictory [Number Number -> Number])
 (defn- pvictory [pythag-winner pythag-loser]
   (let [a pythag-winner
         b pythag-loser]
@@ -87,4 +89,4 @@
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
-  (println "Hello, World!"))
+  (println (pvictory 0.8 0.7)))
