@@ -70,14 +70,19 @@
     (/ (- a (* a b))
        (+ a b (* -2 a b)))))
 
+;; Finds the victor and their victory probability assuming favorites win all matches
 (defn- pick-result [match]
   (let [probs (map :kenpom match)
         p-first-is-victor (apply pvictory probs)
         victor (if (> p-first-is-victor 0.5) (first match) (last match))
-        p-victor (if (> p-first-is-victor 0.5) p-first-is-victor (- 1 p-first-is-victor))]
+        p-victor (if (> p-first-is-victor 0.5) p-first-is-victor (- 1 p-first-is-victor))
+        cumulative-victor-probability (:cumulative-probability victor)]
+
+    ;; Prepend this victory probability to the existing sequence
     (assoc victor :cumulative-probability
            (cons
-            (* (first (:cumulative-probability victor)) p-victor) (:cumulative-probability victor)))))
+            (* (first cumulative-victor-probability) p-victor)
+            cumulative-victor-probability))))
 
 (defn- find-most-likely-victor [sub-bracket]
   (if (seq? sub-bracket)
