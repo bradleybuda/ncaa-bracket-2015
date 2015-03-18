@@ -70,19 +70,19 @@
     (/ (- a (* a b))
        (+ a b (* -2 a b)))))
 
+(defn- pick-result [match]
+  (let [probs (map :kenpom match)
+        p-first-is-victor (apply pvictory probs)
+        victor (if (> p-first-is-victor 0.5) (first match) (last match))
+        p-victor (if (> p-first-is-victor 0.5) p-first-is-victor (- 1 p-first-is-victor))]
+    (assoc victor :cumulative-probability
+           (cons
+            (* (first (:cumulative-probability victor)) p-victor) (:cumulative-probability victor)))))
+
 (defn- find-most-likely-victor [sub-bracket]
   (if (seq? sub-bracket)
-    ;; This is a matchup, so recurse
-    (let [results (map find-most-likely-victor sub-bracket)
-          probs (map :kenpom results)
-          p-first-is-victor (apply pvictory probs)
-          victor (if (> p-first-is-victor 0.5) (first results) (last results))
-          p-victor (if (> p-first-is-victor 0.5) p-first-is-victor (- 1 p-first-is-victor))]
-      (assoc victor :cumulative-probability
-             (cons
-              (* (first (:cumulative-probability victor)) p-victor) (:cumulative-probability victor))))
-
-    ;; This is an individual team
+    (let [sub-bracket-results (map find-most-likely-victor sub-bracket)]
+      (pick-result sub-bracket-results))
     (let [team sub-bracket]
       (assoc team :cumulative-probability [1.0]))))
 
