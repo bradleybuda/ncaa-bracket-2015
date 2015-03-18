@@ -132,6 +132,7 @@
 (defn- find-bracket-reach-distributions [sub-bracket]
   (if (seq? sub-bracket)
     (let [sub-bracket-results (map find-bracket-reach-distributions sub-bracket)]
+      ;; TODO print best result for each sub-bracket
       (play-reach-distributions sub-bracket-results))
     (let [team sub-bracket]
       (make-single-team-reach-distribution team))))
