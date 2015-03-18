@@ -76,7 +76,7 @@
 
 (defn- play-reach-distributions
   "Take a pair of reach-distributions and compute the most likely outcomes of a game between them"
-  [reach-distributions]
+  [limit reach-distributions]
   (let [distributions (map :reach-distribution reach-distributions)
         ;; Pair off all the teams
         pairings (apply cartesian-product distributions)
@@ -99,20 +99,20 @@
                                   (assoc (first team-group) :reach-probability total-probability)))
                               outcomes-grouped-by-team)]
 
-    ;; Limit to just the most likely outcome probs (for now)
-    {:reach-distribution (take 5 (sort-by :reach-probability > reduced-outcomes))}))
+    ;; Limit to just the most likely outcome probs
+    {:reach-distribution (take limit (sort-by :reach-probability > reduced-outcomes))}))
 
 (defn- make-single-team-reach-distribution [team]
   {:reach-distribution (list {:team team :reach-probability 1.0})})
 
-(defn- find-most-likely-victor [sub-bracket]
+;; TODO pass limit in to this
+(defn- find-bracket-reach-distributions [limit sub-bracket]
   (if (seq? sub-bracket)
-    (let [sub-bracket-results (map find-most-likely-victor sub-bracket)]
-      (pick-result sub-bracket-results))
+    (let [sub-bracket-results (map (partial find-bracket-reach-distributions limit) sub-bracket)]
+      (play-reach-distributions limit sub-bracket-results))
     (let [team sub-bracket]
-      (make-single-team-result team))))
+      (make-single-team-reach-distribution team))))
 
-(defn -main
-  "I don't do a whole lot ... yet."
-  [& args]
-  (println (pvictory 0.8 0.7)))
+
+(def -main
+  (partial find-bracket-reach-distributions 4 full-bracket))
