@@ -70,10 +70,19 @@
 
 (defn- find-most-likely-victor [sub-bracket]
   (if (seq? sub-bracket)
+    ;; This is a matchup, so recurse
     (let [results (map find-most-likely-victor sub-bracket)
-          probs (map :kenpom results)]
-      (if (> (apply pvictory probs) 0.5) (first results) (last results)))
-    sub-bracket))
+          probs (map :kenpom results)
+          p-first-is-victor (apply pvictory probs)
+          victor (if (> p-first-is-victor 0.5) (first results) (last results))
+          p-victor (if (> p-first-is-victor 0.5) p-first-is-victor (- 1 p-first-is-victor))]
+      (assoc victor :cumulative-probability
+             (cons
+              (* (first (:cumulative-probability victor)) p-victor) (:cumulative-probability victor))))
+
+    ;; This is an individual team
+    (let [team sub-bracket]
+      (assoc team :cumulative-probability [1.0]))))
 
 (defn -main
   "I don't do a whole lot ... yet."
